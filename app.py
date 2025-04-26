@@ -1,77 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
-import os
-import re
-import requests
-from bs4 import BeautifulSoup
 
-diretorio = 'arquivosTXT'
-os.makedirs(diretorio, exist_ok=True)
-
-palavras_positivas = [
-    re.compile(r"\bbom\b", re.IGNORECASE),
-    re.compile(r"\blegal\w*\b", re.IGNORECASE),
-    re.compile(r"\binteressante\b", re.IGNORECASE),
-    re.compile(r"\bdivertid\w+\b", re.IGNORECASE),
-    re.compile(r'\bam\w+\b', re.IGNORECASE),
-    re.compile(r'\bgost\w+\b', re.IGNORECASE),
-    re.compile(r"\bador\w+\b", re.IGNORECASE),
-    re.compile(r"\bincrível\b", re.IGNORECASE),
-    re.compile(r"\bimpressionante\b", re.IGNORECASE),
-    re.compile(r"\brecomendo\b", re.IGNORECASE)
-]
-
-palavras_negativas = [
-    re.compile(r"\bruim\b", re.IGNORECASE),
-    re.compile(r"\bpessim\w+\b", re.IGNORECASE),
-    re.compile(r"\bchat\w+\b", re.IGNORECASE),
-    re.compile(r"\bterrível\b", re.IGNORECASE),
-    re.compile(r"\bsem graça\b", re.IGNORECASE),
-    re.compile(r"\bfraco\b", re.IGNORECASE),
-    re.compile(r"\bmau\b", re.IGNORECASE),
-    re.compile(r"\birritante\b", re.IGNORECASE),
-    re.compile(r"\bdá raiva\b", re.IGNORECASE),
-    re.compile(r"\bfrustrante\b", re.IGNORECASE),
-    re.compile(r"\bdecepcionante\b", re.IGNORECASE),
-]
-
-def extrairSinopseFilme(filme):
-    url = f"https://www.adorocinema.com/filmes/{filme}/"
-    html = requests.get(url).text
-    bs = BeautifulSoup(html, 'html.parser')
-    sinopse_div = bs.find('div', class_="content-txt")
-    return sinopse_div.get_text(strip=True) if sinopse_div else "Sinopse não encontrada."
-
-def extrairComentariosFilme(filme, n):
-    comentarios = []
-    for i in range(1, n+1):
-        url = f"https://www.adorocinema.com/filmes/{filme}/criticas/espectadores/?page={i}"
-        html = requests.get(url).text
-        bs = BeautifulSoup(html, 'html.parser')
-        comentarios_tag = bs.find_all('div', class_="content-txt review-card-content")
-        for c in comentarios_tag:
-            comentarios.append(c.get_text(strip=True))
-    return comentarios
-
-def salvarArquivo(nome, conteudo):
-    caminho = os.path.join(diretorio, nome)
-    with open(caminho, 'w', encoding='utf-8') as f:
-        f.write(conteudo)
-    return caminho
-
-def classificarComentarios(comentarios):
-    resultados = []
-    for comentario in comentarios:
-        positiva = any(p.search(comentario) for p in palavras_positivas)
-        negativa = any(n.search(comentario) for n in palavras_negativas)
-        if positiva and not negativa:
-            categoria = "POSITIVA"
-        elif negativa and not positiva:
-            categoria = "NEGATIVA"
-        else:
-            categoria = "NEUTRA"
-        resultados.append((comentario, categoria))
-    return resultados
+from extrator.extracao import extrairSinopseFilme, extrairComentariosFilme
+from extrator.classificacao import classificarComentarios
+from extrator.arquivos import salvarArquivo
 
 def extrairTudo():
     filme = entrada_filme.get().strip()
@@ -88,9 +20,9 @@ def extrairTudo():
 
     resultados = classificarComentarios(comentarios)
     total = len(resultados)
-    pos = sum(1 for _, c in resultados if c=="POSITIVA")
-    neg = sum(1 for _, c in resultados if c=="NEGATIVA")
-    neu = sum(1 for _, c in resultados if c=="NEUTRA")
+    pos = sum(1 for _, c in resultados if c == "POSITIVA")
+    neg = sum(1 for _, c in resultados if c == "NEGATIVA")
+    neu = sum(1 for _, c in resultados if c == "NEUTRA")
 
     comentarios_classificados = "\n\n".join([f"[{categoria}] {comentario}" for comentario, categoria in resultados])
     caminho_classificados = salvarArquivo(f"{filme}_comentarios_classificados.txt", comentarios_classificados)
@@ -141,4 +73,3 @@ texto_extraido.tag_configure("NEGATIVA", foreground="red", justify='left', font=
 texto_extraido.tag_configure("NEUTRA", foreground="gray", justify='center', font=("Arial", 12), lmargin1=80, lmargin2=80, rmargin=80, spacing3=10)
 
 janela.mainloop()
-
