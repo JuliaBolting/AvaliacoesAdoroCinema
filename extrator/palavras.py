@@ -208,4 +208,7 @@ palavras_negativas = [
     re.compile(r"\bsem propósito claro\b", re.IGNORECASE),
     re.compile(r"\bfragilidade\b", re.IGNORECASE),
     re.compile(r"\bdifícil de engolir\b", re.IGNORECASE),
+    re.compile(r"\bnão é bom\b", re.IGNORECASE),
+    re.compile(r"\bpéssima\b", re.IGNORECASE),
+    re.compile(r"\bdecepcionante\b", re.IGNORECASE),
 ]
